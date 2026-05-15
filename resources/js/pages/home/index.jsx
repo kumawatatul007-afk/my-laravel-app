@@ -238,17 +238,22 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
     { id: 3, title: 'UI/UX Design', slug: 'ui-ux-design', description: 'Visually compelling, brand-consistent designs in Figma grounded in user research.' },
   ];
 
-  // Keywords from Setting.strating_keyword (comma-separated) — fallback to static
+  // Keywords — always show the 6 core service names (from DB services if available, else static)
+  // Each chip links to its own service detail page
+  const STATIC_SERVICE_KEYWORDS = [
+    { title: 'Website Design & Development', slug: 'website-design-development' },
+    { title: 'Mobile App Development',       slug: 'mobile-app-development' },
+    { title: 'UI/UX Design',                 slug: 'ui-ux-design' },
+    { title: 'E-Commerce Development',       slug: 'e-commerce-development' },
+    { title: 'SEO & Performance Optimisation', slug: 'seo-performance-optimisation' },
+    { title: 'Website Maintenance & Support', slug: 'website-maintenance-support' },
+  ];
+
   const keywordHighlights = (() => {
-    if (setting && setting.strating_keyword) {
-      return setting.strating_keyword.split(',').map(k => k.trim()).filter(Boolean);
+    if (dbServices && dbServices.length > 0) {
+      return dbServices.map(s => ({ title: s.title, slug: s.slug || '' }));
     }
-    return [
-      'Best Software Developer in Jaipur',
-      'Best Software Developer in Kalwar Road',
-      'Best Software Developer in Jagatpura',
-      'Best Software Developer in Civil Lines',
-    ];
+    return STATIC_SERVICE_KEYWORDS;
   })();
 
   // Service highlights from DB service titles — fallback to static
@@ -1222,16 +1227,25 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             <div className="keywords-content">
               <p className="keywords-title">#KEYWORD</p>
               <div className="keywords-chips" data-lenis-prevent>
-                {keywordHighlights.map((label, idx) => (
-                  <a
-                    key={idx}
-                    href="/web-developer-jaipur"
-                    className="keyword-chip"
-                    style={{ textDecoration: 'none', cursor: 'pointer' }}
-                  >
-                    {label}
-                  </a>
-                ))}
+                {keywordHighlights.map((label, idx) => {
+                  // Match keyword to a service slug if possible
+                  const matchedService = (dbServices && dbServices.length > 0)
+                    ? dbServices.find(s => s.title && s.title.toLowerCase().trim() === label.toLowerCase().trim())
+                    : null;
+                  const href = matchedService && matchedService.slug
+                    ? `/services/${matchedService.slug}`
+                    : '/services';
+                  return (
+                    <a
+                      key={idx}
+                      href={href}
+                      className="keyword-chip"
+                      style={{ textDecoration: 'none', cursor: 'pointer' }}
+                    >
+                      {label}
+                    </a>
+                  );
+                })}
               </div>
             </div>
 

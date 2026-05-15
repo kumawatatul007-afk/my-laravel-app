@@ -71,12 +71,58 @@ export default function ServicesPage({ services = [] }) {
     url: `https://thenikhilsharma.in/services#${s.slug}`,
   }));
 
+  // ── Dynamic SEO keywords ──────────────────────────────────────────────────
+  // Base service names from DB + static fallbacks
+  const serviceNames = services.length > 0
+    ? services.map((s) => s.title).filter(Boolean)
+    : ['Web Development', 'App Development', 'UI/UX Design', 'PHP Laravel Development', 'React Development', 'Flutter App Development'];
+
+  // Keyword modifiers (matching the audit tool pattern: Best, Top, Hire, No1, Find, The Best)
+  const modifiers = ['Best', 'Top', 'Top 10', 'Top 5', 'No.1', 'Find', 'Hire', 'The Best', 'Affordable', 'Professional', 'Expert'];
+  const locations = ['Jaipur', 'Rajasthan', 'India', 'Jaipur Rajasthan'];
+
+  // Generate: "Best Web Developer Jaipur", "Top PHP Developer Jaipur", etc.
+  const dynamicKeywords = [];
+  serviceNames.forEach((name) => {
+    modifiers.forEach((mod) => {
+      locations.slice(0, 2).forEach((loc) => {
+        dynamicKeywords.push(`${mod} ${name} ${loc}`);
+      });
+    });
+  });
+
+  // Core branded + location keywords
+  const coreKeywords = [
+    'Nikhil Sharma Web Developer Jaipur',
+    'Full Stack Developer Jaipur',
+    'Freelance Web Developer Jaipur',
+    'Best Web Developer in Jaipur',
+    'Top Web Developer Jaipur',
+    'Hire Web Developer Jaipur',
+    'No.1 Web Developer Jaipur',
+    'Web Development Company Jaipur',
+    'Website Designer Jaipur',
+    'React Developer Jaipur',
+    'Laravel Developer Jaipur',
+    'PHP Developer Jaipur',
+    'Flutter Developer Jaipur',
+    'Mobile App Developer Jaipur',
+    'UI UX Designer Jaipur',
+    'SEO Developer Jaipur',
+    'Affordable Web Development Jaipur',
+    'Professional Web Developer India',
+    'Best Freelance Developer Rajasthan',
+    'Top Full Stack Developer India',
+  ];
+
+  const allKeywords = [...coreKeywords, ...dynamicKeywords].join(', ');
+
   return (
     <main className="srv-root">
       <SEO
-        title="Web Development, App Development & UI/UX Design Services — Jaipur"
-        description="Hire Nikhil Sharma for professional web development, mobile app development, and UI/UX design in Jaipur. PHP, React, Flutter. Affordable rates, fast delivery."
-        keywords="Web Development Services Jaipur, App Development Jaipur, UI UX Design India, PHP Developer Jaipur, React Developer, Flutter App Developer"
+        title="Best Web Development, App Development & UI/UX Design Services in Jaipur"
+        description="Hire Nikhil Sharma — No.1 Freelance Full Stack Developer in Jaipur. Expert in PHP Laravel, React.js, Flutter. Top-rated web & app development services across India. Get a free quote today."
+        keywords={allKeywords}
         structuredData={serviceSchemas}
       />
 
