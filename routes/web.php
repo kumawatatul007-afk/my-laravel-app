@@ -27,19 +27,36 @@ Route::get('/robots.txt', [SitemapController::class, 'robots']);
 
 Route::get('/', [PublicController::class, 'home']);
 Route::get('/dashboard', [PublicController::class, 'home']);
-Route::get('/about', fn () => Inertia::render('About/index'));
+Route::get('/about', [PublicController::class, 'about']);
 Route::get('/blog', [PublicController::class, 'blog']);
-Route::get('/blog/{slug}', [PublicController::class, 'blogDetail']);
-Route::get('/blog/{slug}/sidebar', [PublicController::class, 'blogDetailSidebar']);
-Route::get('/contact', fn () => Inertia::render('Contact/index'));
+Route::get('/blog/{slug}', [PublicController::class, 'blogDetailLegacy']);
+Route::get('/blog/{slug}/sidebar', [PublicController::class, 'blogDetailSidebarLegacy']);
+Route::get('/contact', [PublicController::class, 'contact']);
 Route::get('/portfolio/list', [PublicController::class, 'portfolioList']);
 Route::get('/portfolio/{id}', [PublicController::class, 'portfolioDetail']);
 Route::get('/portfolio', [PublicController::class, 'portfolio']);
 Route::get('/services', [PublicController::class, 'services']);
 Route::get('/services/{slug}', [PublicController::class, 'serviceDetail']);
-Route::get('/web-developer-jaipur', fn () => Inertia::render('LocalLanding/WebDeveloperJaipur'));
-Route::get('/privacy-policy',   fn () => Inertia::render('PrivacyPolicy/index'));
-Route::get('/terms-of-service', fn () => Inertia::render('TermsOfService/index'));
+Route::get('/service/{prefix}/{rest}', [PublicController::class, 'serviceDetailNew'])
+    ->where('prefix', '[A-Za-z][a-zA-Z0-9]*')
+    ->where('rest', '[a-z0-9\-]+');
+Route::get('/keyword/{slug}', [PublicController::class, 'keywordDetail']);
+// Static pages — must be defined BEFORE the catch-all /{slug} route
+Route::get('/web-developer-jaipur', [PublicController::class, 'webDeveloperJaipur']);
+Route::get('/privacy-policy',   [PublicController::class, 'privacyPolicy']);
+Route::get('/terms-of-service', [PublicController::class, 'termsOfService']);
+// Blog new clean URLs — /{slug} (no /blog/ prefix)
+Route::get('/{slug}', [PublicController::class, 'blogDetail'])
+    ->where('slug', '[a-z0-9][a-z0-9\-]+[a-z0-9]');
+// 2-segment: /Best/website-developer-for-hire  (no location)
+Route::get('/{prefix}/{service}', [PublicController::class, 'keywordDetailNew'])
+    ->where('prefix', '[A-Za-z]+')
+    ->where('service', '[a-z0-9][a-z0-9\-]+');
+// 3-segment: /Best/software-developer/Jaipur  (with location)
+Route::get('/{prefix}/{service}/{location}', [PublicController::class, 'keywordDetailNew'])
+    ->where('prefix', '[A-Za-z]+')
+    ->where('service', '[a-z0-9\-]+')
+    ->where('location', '[A-Za-z][A-Za-z0-9\s\-]*');
 
 // Contact form submission
 Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');

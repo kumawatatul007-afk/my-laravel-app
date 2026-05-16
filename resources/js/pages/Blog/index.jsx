@@ -87,7 +87,7 @@ export default function BlogPage({ posts }) {
               {paginatedPosts.map((post, index) => (
                 <Link
                   key={post.id}
-                  href={`/blog/${post.slug}`}
+                  href={`/${post.slug}`}
                   style={{ textDecoration: 'none', color: 'inherit' }}
                   data-aos="fade-up"
                   data-aos-delay={index * 100}

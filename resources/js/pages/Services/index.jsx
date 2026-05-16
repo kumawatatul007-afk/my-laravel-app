@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from '@inertiajs/react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -47,6 +47,69 @@ const FAQS = [
 ];
 
 const PER_PAGE = 5;
+
+// "web-development" → "/service/Web/development"
+function toServiceUrl(slug) {
+  if (!slug) return '/services';
+  const parts = slug.split('-');
+  const prefix = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  const rest = parts.slice(1).join('-');
+  return rest ? `/service/${prefix}/${rest}` : `/service/${prefix}`;
+}
+
+// Count-up hook — animates from 0 to target when element enters viewport
+function useCountUp(target, duration = 1800) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  const started = useRef(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !started.current) {
+          started.current = true;
+          const startTime = performance.now();
+          const step = (now) => {
+            const elapsed = now - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease-out cubic
+            const eased = 1 - Math.pow(1 - progress, 3);
+            setCount(Math.floor(eased * target));
+            if (progress < 1) requestAnimationFrame(step);
+            else setCount(target);
+          };
+          requestAnimationFrame(step);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [target, duration]);
+
+  return { count, ref };
+}
+
+// Individual stat item with count-up
+function StatItem({ num, label }) {
+  // Parse: "8+" → { value: 8, suffix: '+' }, "120+" → { value: 120, suffix: '+' }, "98%" → { value: 98, suffix: '%' }, "3" → { value: 3, suffix: '' }
+  const match = String(num).match(/^(\d+)(.*)$/);
+  const target = match ? parseInt(match[1], 10) : 0;
+  const suffix = match ? match[2] : '';
+
+  const { count, ref } = useCountUp(target, 1800);
+
+  return (
+    <div className="srv-stat" ref={ref}>
+      <span className="srv-stat-num">{count}{suffix}</span>
+      <span className="srv-stat-label">{label}</span>
+    </div>
+  );
+}
 
 export default function ServicesPage({ services = [] }) {
   const [openFaq, setOpenFaq] = useState(null);
@@ -597,10 +660,7 @@ export default function ServicesPage({ services = [] }) {
           { num: '3',    label: 'Countries Served' },
           { num: '98%',  label: 'Client Satisfaction' },
         ].map((s) => (
-          <div key={s.label} className="srv-stat">
-            <span className="srv-stat-num">{s.num}</span>
-            <span className="srv-stat-label">{s.label}</span>
-          </div>
+          <StatItem key={s.label} num={s.num} label={s.label} />
         ))}
       </div>
 
@@ -657,7 +717,7 @@ export default function ServicesPage({ services = [] }) {
                           <div className="srv-card-meta">
                             <p className="srv-card-num">Service {String(gi + 1).padStart(2, '0')}</p>
                             <h3 className="srv-card-title">
-                              <a href={`/services/${service.slug}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                              <a href={toServiceUrl(service.slug)} style={{ color: 'inherit', textDecoration: 'none' }}>
                                 {service.title}
                               </a>
                             </h3>

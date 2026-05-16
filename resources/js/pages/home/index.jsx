@@ -237,27 +237,29 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
     { id: 3, title: 'UI/UX Design', slug: 'ui-ux-design', description: 'Visually compelling, brand-consistent designs in Figma grounded in user research.' },
   ];
 
-  // Keywords from Setting.strating_keyword (comma-separated) — fallback to static
+  // Keywords from Setting.strating_keyword (comma-separated) — no dummy fallback
   const keywordHighlights = (() => {
     if (setting && setting.strating_keyword) {
       return setting.strating_keyword.split(',').map(k => k.trim()).filter(Boolean);
     }
-    return [
-      'Best Software Developer in Jaipur',
-      'Best Software Developer in Kalwar Road',
-      'Best Software Developer in Jagatpura',
-      'Best Software Developer in Civil Lines',
-    ];
+    return [];
   })();
 
-  // Service highlights from DB service titles — fallback to static
-  const serviceHighlights = (dbServices && dbServices.length > 0)
-    ? dbServices.map(s => s.title)
-    : [
-      'Best Website Design Near Me',
-      'Best WEBSITE DEVELOPER FOR HIRE',
-      'Best Data-Driven Decision Making is Critical to Create Business Value',
-    ];
+  // Service highlights from DB setting.service_keyword — format: "title|slug,title|slug"
+  // Each entry is clickable and links to /services/{slug}
+  const serviceHighlights = (() => {
+    if (setting && setting.service_keyword) {
+      return setting.service_keyword.split(',').map(entry => {
+        const parts = entry.trim().split('|');
+        return { title: parts[0] ? parts[0].trim() : '', slug: parts[1] ? parts[1].trim() : '' };
+      }).filter(s => s.title);
+    }
+    // Fallback: use DB service titles with their slugs
+    if (dbServices && dbServices.length > 0) {
+      return dbServices.map(s => ({ title: s.title, slug: s.slug }));
+    }
+    return [];
+  })();
 
   const experiences = [
     { id: 1, company: 'Apple', title: 'UX / UI Designer', duration: 'Jan 2023 – May 2024', description: 'Cursus risus at ultrices mi tempus imperdiet nulla malesuada pellentesque elit eget gravida cum sociis natoque penatibus', logo: 'M19.665 16.811a10.316 10.316 0 0 1-1.021 1.837c-.537.767-.978 1.297-1.316 1.592-.525.482-1.089.73-1.692.744-.432 0-.954-.123-1.562-.373-.61-.249-1.17-.371-1.683-.371-.537 0-1.113.122-1.73.371-.616.25-1.114.381-1.495.393-.577.025-1.154-.229-1.729-.764-.367-.32-.826-.87-1.377-1.648-.59-.829-1.075-1.794-1.455-2.891-.407-1.187-.611-2.335-.611-3.447 0-1.273.275-2.372.826-3.292a4.857 4.857 0 0 1 1.73-1.751 4.65 4.65 0 0 1 2.34-.662c.46 0 1.063.142 1.81.422s1.227.422 1.436.422c.158 0 .689-.167 1.593-.498.853-.307 1.573-.434 2.163-.384 1.6.129 2.801.759 3.6 1.895-1.43.867-2.137 2.08-2.123 3.637.012 1.213.453 2.222 1.317 3.023a4.33 4.33 0 0 0 1.315.863c-.106.307-.218.6-.336.882zM15.998 2.38c0 .95-.348 1.838-1.039 2.659-.836.976-1.846 1.541-2.941 1.452a2.955 2.955 0 0 1-.021-.36c0-.913.396-1.889 1.103-2.688.352-.404.8-.741 1.343-1.009.542-.264 1.054-.41 1.536-.435.013.128.019.255.019.381z' },
@@ -397,6 +399,26 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
   };
 
   if (isLoading) {
+    // Keywords for preloader ticker — use DB data if available, else static fallback
+    const preloaderKeywords = keywordHighlights.length > 0
+      ? keywordHighlights
+      : [
+          'Best Software Developer in Jaipur',
+          'Best IT Freelancer in Jaipur',
+          'Best Website Developer in Jaipur',
+          'Best PHP Developer in Jaipur',
+          'Best Mobile Application Development in Jaipur',
+          'Best Front-End Developer in Jaipur',
+          'Best SQL Database Developer in Jaipur',
+          'Best Freelancers Hire in Jaipur',
+          'Best Software Developer in Rajasthan',
+          'Best Website Developer in Rajasthan',
+          'Best IT Freelancer in Rajasthan',
+          'Best PHP Developer in Rajasthan',
+        ];
+    // Duplicate for seamless infinite scroll
+    const tickerItems = [...preloaderKeywords, ...preloaderKeywords];
+
     return (
       <>
         <style>{`
@@ -426,7 +448,7 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 2rem;
+            gap: 1.5rem;
             transition: opacity 0.4s ease;
           }
           .mora-preloader.exiting .mora-preloader__center { opacity: 0; }
@@ -499,6 +521,52 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             animation: pl-fade 0.4s ease 0.5s forwards;
           }
           @keyframes pl-fade { to { opacity: 1; } }
+
+          /* Keywords ticker */
+          .mora-preloader__ticker-wrap {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            overflow: hidden;
+            padding: 0.6rem 0;
+            background: rgba(255,255,255,0.04);
+            border-top: 1px solid rgba(255,255,255,0.07);
+            opacity: 0;
+            animation: pl-fade 0.5s ease 0.9s forwards;
+          }
+          .mora-preloader__ticker {
+            display: flex;
+            gap: 0;
+            white-space: nowrap;
+            animation: pl-ticker 60s linear infinite;
+            will-change: transform;
+          }
+          .mora-preloader.exiting .mora-preloader__ticker {
+            animation-play-state: paused;
+          }
+          @keyframes pl-ticker {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+          .mora-preloader__ticker-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0 1.5rem;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.06em;
+            color: rgba(248,250,252,0.5);
+            text-transform: uppercase;
+            flex-shrink: 0;
+          }
+          .mora-preloader__ticker-item::after {
+            content: '✦';
+            color: #3b82f6;
+            font-size: 0.5rem;
+            opacity: 0.7;
+          }
         `}</style>
 
         <div className={`mora-preloader${isExiting ? ' exiting' : ''}`}>
@@ -513,6 +581,14 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
               <div className="mora-preloader__bar" />
             </div>
             <p className="mora-preloader__tagline">Portfolio &amp; Creative Studio</p>
+          </div>
+          {/* Keywords scrolling ticker at bottom */}
+          <div className="mora-preloader__ticker-wrap" aria-hidden="true">
+            <div className="mora-preloader__ticker">
+              {tickerItems.map((kw, i) => (
+                <span key={i} className="mora-preloader__ticker-item">{kw}</span>
+              ))}
+            </div>
           </div>
         </div>
       </>
@@ -676,7 +752,13 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
                     : ''}
                 </p>
                 <a
-                  href={service.slug ? `/services/${service.slug}` : '/services'}
+                  href={(() => {
+                    if (!service.slug) return '/services';
+                    const parts = service.slug.split('-');
+                    const prefix = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+                    const rest = parts.slice(1).join('-');
+                    return rest ? `/service/${prefix}/${rest}` : `/service/${prefix}`;
+                  })()}
                   className="svc-card-link"
                 >
                   Learn more →
@@ -1074,7 +1156,7 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             {blogPosts.map((post, i) => (
               <a
                 key={post.id}
-                href={`/blog/${post.slug || post.id}`}
+                href={`/${post.slug || post.id}`}
                 style={{ textDecoration: 'none', color: 'inherit' }}
               >
               <div
@@ -1223,26 +1305,16 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             <div className="keywords-content">
               <p className="keywords-title">#KEYWORD</p>
               <div className="keywords-chips" data-lenis-prevent>
-                {keywordHighlights.map((label, idx) => (
-                  <a
-                    key={idx}
-                    href="/web-developer-jaipur"
-                    className="keyword-chip"
-                    style={{ textDecoration: 'none', cursor: 'pointer' }}
-                  >
-                    {label}
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            {/* Services Column */}
-            <div className="keywords-content">
-              <p className="keywords-title">#SERVICES</p>
-              <div className="keywords-chips" data-lenis-prevent>
-                {serviceHighlights.map((label, idx) => {
-                  const svc = (dbServices && dbServices.length > 0) ? dbServices[idx] : null;
-                  const href = svc && svc.slug ? `/services/${svc.slug}` : '/services';
+                {keywordHighlights.map((label, idx) => {
+                  // New URL format: "Best Software Developer in Jaipur" → "/Best/software-developer/Jaipur"
+                  const inParts = label.split(' in ');
+                  const servicePart = (inParts[0] || label).trim();
+                  const location = (inParts[1] || '').trim();
+                  const words = servicePart.split(/\s+/);
+                  const prefix = words[0] || 'Best';
+                  const rest = words.slice(1).join(' ');
+                  const serviceSlug = rest.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                  const href = location ? `/${prefix}/${serviceSlug}/${location}` : `/${prefix}/${serviceSlug}`;
                   return (
                     <a
                       key={idx}
@@ -1251,6 +1323,38 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
                       style={{ textDecoration: 'none', cursor: 'pointer' }}
                     >
                       {label}
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Services Column */}
+            <div className="keywords-content">
+              <p className="keywords-title">#SERVICES</p>
+              <div className="keywords-chips" data-lenis-prevent>
+                {serviceHighlights.map((svc, idx) => {
+                  // Service chips use keyword-style URL from title
+                  // "Best Website Design Near Me" → "/Best/website-design-near-me"
+                  const title = svc.title || '';
+                  const inParts = title.split(' in ');
+                  const servicePart = (inParts[0] || title).trim();
+                  const location = (inParts[1] || '').trim();
+                  const words = servicePart.split(/\s+/);
+                  const prefix = words[0] || 'Best';
+                  const rest = words.slice(1).join(' ');
+                  const serviceSlug = rest.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+                  const href = location
+                    ? `/${prefix}/${serviceSlug}/${location}`
+                    : `/${prefix}/${serviceSlug}`;
+                  return (
+                    <a
+                      key={idx}
+                      href={href}
+                      className="keyword-chip"
+                      style={{ textDecoration: 'none', cursor: 'pointer' }}
+                    >
+                      {svc.title}
                     </a>
                   );
                 })}

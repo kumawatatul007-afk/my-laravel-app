@@ -159,6 +159,15 @@ const PAGE_STYLES = `
   }
   .sd-eyebrow::before { content: ''; display: inline-block; width: 16px; height: 2px; background: #6366f1; }
   .sd-desc { font-size: 0.97rem; color: #444; line-height: 1.9; white-space: pre-line; }
+  .sd-desc-html { font-size: 0.97rem; color: #444; line-height: 1.9; }
+  .sd-desc-html h2 { font-size: 1.3rem; font-weight: 700; color: #111; margin: 1.8rem 0 0.8rem; letter-spacing: -0.01em; }
+  .sd-desc-html h3 { font-size: 1.1rem; font-weight: 700; color: #222; margin: 1.4rem 0 0.6rem; }
+  .sd-desc-html p { margin-bottom: 1rem; }
+  .sd-desc-html ul, .sd-desc-html ol { padding-left: 1.4rem; margin-bottom: 1rem; }
+  .sd-desc-html li { margin-bottom: 0.4rem; }
+  .sd-desc-html strong { color: #111; font-weight: 700; }
+  .sd-desc-html a { color: #6366f1; text-decoration: underline; }
+  .sd-desc-html h2:first-child, .sd-desc-html h3:first-child { margin-top: 0; }
 
   .sd-feat-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(220px,1fr));
@@ -227,11 +236,25 @@ const PAGE_STYLES = `
   }
 `;
 
-export default function ServiceDetailPage({ service, related = [] }) {
+// "web-development" → "/service/Web/development"
+function toServiceUrl(slug) {
+  if (!slug) return '/services';
+  const parts = slug.split('-');
+  const prefix = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+  const rest = parts.slice(1).join('-');
+  return rest ? `/service/${prefix}/${rest}` : `/service/${prefix}`;
+}
+
+export default function ServiceDetailPage({ service, related = [], setting = null }) {
   useEffect(() => {
     AOS.init({ duration: 700, once: true, offset: 50 });
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [service?.id]);
+
+  // ── Dynamic values from setting ──────────────────────────────────────────
+  const siteName  = setting?.website_title || 'Nikhil Sharma';
+  const sitePhone = setting?.phone         || null;
+  const siteEmail = setting?.email         || null;
 
   if (!service) {
     return (
@@ -248,27 +271,29 @@ export default function ServiceDetailPage({ service, related = [] }) {
 
   const features = Array.isArray(service.features) ? service.features : [];
   const descText = stripHtml(service.description || '');
+  const hasHtmlDesc = !!(service.description && service.description.includes('<'));
 
-  const structuredData = {
+  const structuredData = [{
     '@context': 'https://schema.org',
     '@type': 'Service',
-    name: service.title,
-    description: descText.slice(0, 300),
-    provider: { '@type': 'Person', name: 'Nikhil Sharma', url: 'https://thenikhilsharma.in' },
-    url: `https://thenikhilsharma.in/services/${service.slug}`,
+    name: service.title || '',
+    description: (service.meta_description || descText || '').slice(0, 300),
+    provider: { '@type': 'Person', name: siteName, url: 'https://thenikhilsharma.in' },
+    url: `https://thenikhilsharma.in${toServiceUrl(service.slug || '')}`,
     ...(service.price_range ? { offers: { '@type': 'Offer', description: service.price_range } } : {}),
-  };
+  }];
 
-  const titleWords = service.title ? service.title.split(' ') : [];
-  const titleMain  = titleWords.slice(0, -1).join(' ');
-  const titleLast  = titleWords.slice(-1)[0] || '';
+  const safeTitle = service.title || 'Service';
+  const titleWords = safeTitle.split(' ');
+  const titleMain  = titleWords.length > 1 ? titleWords.slice(0, -1).join(' ') : '';
+  const titleLast  = titleWords[titleWords.length - 1] || safeTitle;
 
   return (
     <main className="sd-root">
       <SEO
-        title={`${service.title} \u2014 Jaipur | Nikhil Sharma`}
-        description={service.subtitle || descText.slice(0, 160) || `Professional ${service.title} services in Jaipur by Nikhil Sharma.`}
-        keywords={`${service.title} Jaipur, ${service.title} India, Nikhil Sharma ${service.title}`}
+        title={service.meta_title || `${safeTitle} — Jaipur | ${siteName}`}
+        description={service.meta_description || service.subtitle || (descText ? descText.slice(0, 160) : '') || `Professional ${safeTitle} services in Jaipur by ${siteName}.`}
+        keywords={service.meta_keyword || `${safeTitle} Jaipur, ${safeTitle} India, ${siteName} ${safeTitle}`}
         structuredData={structuredData}
       />
 
@@ -288,12 +313,11 @@ export default function ServiceDetailPage({ service, related = [] }) {
             <span className="sd-bc-cur">{service.title}</span>
           </nav>
 
-          <div className="sd-icon-wrap" data-aos="fade-up" data-aos-duration="600">
-            {getIcon(service.slug)}
-          </div>
-
           <h1 data-aos="fade-up" data-aos-delay="80" data-aos-duration="700">
-            {titleMain ? <>{titleMain} <span className="accent">{titleLast}</span></> : <span className="accent">{titleLast}</span>}
+            {titleMain
+              ? <>{titleMain} <span className="accent">{titleLast}</span></>
+              : <span className="accent">{titleLast}</span>
+            }
           </h1>
 
           {service.subtitle && (
@@ -328,10 +352,17 @@ export default function ServiceDetailPage({ service, related = [] }) {
 
           {/* LEFT */}
           <div>
-            {descText && (
+            {(service.description) && (
               <div className="sd-card" data-aos="fade-up" data-aos-duration="600">
                 <p className="sd-eyebrow">Overview</p>
-                <p className="sd-desc">{descText}</p>
+                {hasHtmlDesc ? (
+                  <div
+                    className="sd-desc-html"
+                    dangerouslySetInnerHTML={{ __html: service.description }}
+                  />
+                ) : (
+                  <p className="sd-desc">{descText}</p>
+                )}
               </div>
             )}
 
@@ -372,9 +403,11 @@ export default function ServiceDetailPage({ service, related = [] }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                 {[
                   { label: 'Location', value: 'Jaipur, India (Remote OK)' },
-                  { label: 'Delivery', value: '2\u201312 weeks depending on scope' },
+                  { label: 'Delivery', value: '2–12 weeks depending on scope' },
                   { label: 'Stack',    value: 'React, Laravel, Flutter, PHP' },
                   { label: 'Support',  value: 'Post-launch maintenance available' },
+                  ...(sitePhone ? [{ label: 'Phone', value: sitePhone }] : []),
+                  ...(siteEmail ? [{ label: 'Email', value: siteEmail }] : []),
                 ].map(item => (
                   <div key={item.label} className="sd-info-row">
                     <span className="sd-info-label">{item.label}</span>
@@ -399,7 +432,7 @@ export default function ServiceDetailPage({ service, related = [] }) {
             <h2 className="sd-related-title">Other Services</h2>
             <div className="sd-related-grid">
               {related.map(s => (
-                <Link key={s.id} href={`/services/${s.slug}`} className="sd-related-card">
+                <Link key={s.id} href={toServiceUrl(s.slug)} className="sd-related-card">
                   <p className="sd-related-card-title">{s.title}</p>
                   {s.subtitle && <p className="sd-related-card-sub">{s.subtitle}</p>}
                   {s.price_range && (
