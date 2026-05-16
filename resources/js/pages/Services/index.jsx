@@ -3,6 +3,7 @@ import { Link } from '@inertiajs/react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import SEO from '../../components/SEO';
+import { ShimmerServiceCard } from '../../components/ShimmerLoader';
 
 function stripHtml(html) {
   if (!html) return '';
@@ -114,6 +115,13 @@ function StatItem({ num, label }) {
 export default function ServicesPage({ services = [] }) {
   const [openFaq, setOpenFaq] = useState(null);
   const [page, setPage] = useState(0);
+  const [shimmer, setShimmer] = useState(true);
+
+  // Brief shimmer on mount
+  useEffect(() => {
+    const t = setTimeout(() => setShimmer(false), 700);
+    return () => clearTimeout(t);
+  }, []);
   const totalPages = Math.ceil(services.length / PER_PAGE);
   const paged = services.slice(page * PER_PAGE, (page + 1) * PER_PAGE);
 
@@ -680,7 +688,13 @@ export default function ServicesPage({ services = [] }) {
           )}
         </div>
 
-        {services.length === 0 ? (
+        {shimmer ? (
+          <div className="srv-grid">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <ShimmerServiceCard key={i} />
+            ))}
+          </div>
+        ) : services.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '5rem 0', color: '#9ca3af' }}>
             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" style={{ margin: '0 auto 1rem', display: 'block', opacity: 0.4 }}>
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>

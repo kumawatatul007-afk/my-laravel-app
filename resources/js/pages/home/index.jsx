@@ -4,6 +4,7 @@ import 'aos/dist/aos.css';
 import './index.css';
 import SEO from '../../components/SEO';
 import OptimizedImage from '../../components/OptimizedImage';
+import { ShimmerBlogCard, ShimmerPortfolioCard } from '../../components/ShimmerLoader';
 
 export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPortfolios, services: dbServices = [], setting }) {
   const [totalPosts] = useState(0);
@@ -993,7 +994,9 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
             </div>
           </div>
           <div className="port-grid">
-            {portfolios.map((project, idx) => (
+            {portfolios.length === 0
+              ? Array.from({ length: 6 }).map((_, i) => <ShimmerPortfolioCard key={i} />)
+              : portfolios.map((project, idx) => (
               <a key={project.id} href={`/portfolio/${project.id}`} style={{ textDecoration: 'none' }}>
               <div className="port-item" data-aos="zoom-in" data-aos-delay={idx * 100} data-aos-duration="800">
                 <div className="port-img-wrap">
@@ -1193,8 +1196,6 @@ export default function DashboardPage({ blogPosts: dbBlogPosts, portfolios: dbPo
           </div>
         </div>
       </section>
-
-      {/* Contact Section */}
       <section className="contact-section">
         <div className="container">
           <div className="contact-layout">
